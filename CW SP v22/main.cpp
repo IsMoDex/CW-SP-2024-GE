@@ -410,6 +410,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_SELECT_MODE:
             mode = MODE_SELECT;
             break;
+        case IDM_MIRROR_VERTICAL:  // Обработка зеркального отображения
+            if (selectedShape) {
+                selectedShape->mirror(true); // Вертикальное отражение
+                InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
+            }
+            break;
+        case IDM_MIRROR_HORIZONTAL:  // Обработка зеркального отображения
+            if (selectedShape) {
+                selectedShape->mirror(false); // Вертикальное отражение
+                InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
+            }
+            break;
         }
         break;
 
