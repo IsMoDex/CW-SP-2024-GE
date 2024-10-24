@@ -5,142 +5,142 @@
 
 #define M_PI 3.1415926535
 
-// Определим интерфейс для всех фигур
-class Shape {
-public:
-    virtual void draw(HDC hdc) = 0;
-    virtual void move(int dx, int dy) = 0;
-    virtual Shape* copy() const = 0;
-    virtual void rotate(double angle) = 0;
-    virtual void mirror(bool vertical) = 0;
+namespace MyShapes {
+    // Определим интерфейс для всех фигур
+    class Shape {
+    public:
+        virtual void draw(HDC hdc) = 0;
+        virtual void move(int dx, int dy) = 0;
+        virtual Shape* copy() const = 0;
+        virtual void rotate(double angle) = 0;
+        virtual void mirror(bool vertical) = 0;
 
-    // Добавляем виртуальный метод isClicked
-    virtual bool isClicked(int x, int y) = 0;
+        // Добавляем виртуальный метод isClicked
+        virtual bool isClicked(int x, int y) = 0;
 
-    virtual ~Shape() {}  // Виртуальный деструктор для безопасного удаления производных классов
-};
+        virtual ~Shape() {}  // Виртуальный деструктор для безопасного удаления производных классов
+    };
 
-// Точка
-class Point : public Shape {
-public:
-    int x, y;
+    // Точка
+    class Point : public Shape {
+    public:
+        int x, y;
 
-    Point() : x(0), y(0) {}  // Конструктор по умолчанию
+        Point() : x(0), y(0) {}  // Конструктор по умолчанию
 
-    Point(int x, int y) : x(x), y(y) {}
+        Point(int x, int y) : x(x), y(y) {}
 
-    void draw(HDC hdc) override {
-        SetPixel(hdc, x, y, RGB(0, 0, 0));
-    }
-
-    void move(int dx, int dy) override {
-        x += dx;
-        y += dy;
-    }
-
-    Shape* copy() const override {
-        return new Point(x, y);
-    }
-
-    void rotate(double angle) override {
-        // Поворот точки не имеет смысла
-    }
-
-    void mirror(bool vertical) override {
-        if (vertical) {
-            x = -x;
+        void draw(HDC hdc) override {
+            SetPixel(hdc, x, y, RGB(0, 0, 0));
         }
-        else {
-            y = -y;
+
+        void move(int dx, int dy) override {
+            x += dx;
+            y += dy;
         }
-    }
 
-    bool isClicked(int x, int y) override {
-        return this->x == x && this->y == y; // Простая проверка
-    }
-};
+        Shape* copy() const override {
+            return new Point(x, y);
+        }
 
-// Линия (отрезок)
-class Line : public Shape {
-protected:
-    Point start, end;
-public:
-    Line(Point start, Point end) : start(start), end(end) {}
+        void rotate(double angle) override {
+            // Поворот точки не имеет смысла
+        }
 
-    void draw(HDC hdc) override {
-        MoveToEx(hdc, start.x, start.y, NULL);
-        LineTo(hdc, end.x, end.y);
-    }
+        void mirror(bool vertical) override {
+            if (vertical) {
+                x = -x;
+            }
+            else {
+                y = -y;
+            }
+        }
 
-    bool isClicked(int x, int y) {
-        // Простая проверка на попадание в линию (с учётом некоторой погрешности)
-        int tolerance = 5;
-        int dx = end.x - start.x;
-        int dy = end.y - start.y;
-        double distance = std::abs(dy * x - dx * y + end.x * start.y - end.y * start.x) / sqrt(dx * dx + dy * dy);
-        return distance < tolerance;
-    }
+        bool isClicked(int x, int y) override {
+            return this->x == x && this->y == y; // Простая проверка
+        }
+    };
 
-    void move(int dx, int dy) override {
-        start.move(dx, dy);
-        end.move(dx, dy);
-    }
+    // Линия (отрезок)
+    class Line : public Shape {
+    protected:
+        Point start, end;
+    public:
+        Line(Point start, Point end) : start(start), end(end) {}
 
-    Shape* copy() const override {
-        return new Line(start, end);
-    }
+        void draw(HDC hdc) override {
+            MoveToEx(hdc, start.x, start.y, NULL);
+            LineTo(hdc, end.x, end.y);
+        }
 
-    void rotate(double angle) override {
-        // Реализация поворота линии
-    }
+        bool isClicked(int x, int y) {
+            // Простая проверка на попадание в линию (с учётом некоторой погрешности)
+            int tolerance = 5;
+            int dx = end.x - start.x;
+            int dy = end.y - start.y;
+            double distance = std::abs(dy * x - dx * y + end.x * start.y - end.y * start.x) / sqrt(dx * dx + dy * dy);
+            return distance < tolerance;
+        }
 
-    void mirror(bool vertical) override {
-        start.mirror(vertical);
-        end.mirror(vertical);
-    }
-};
+        void move(int dx, int dy) override {
+            start.move(dx, dy);
+            end.move(dx, dy);
+        }
 
-// Круг
-class Circle : public Shape {
-protected:
-    Point center;
-    int radius;
+        Shape* copy() const override {
+            return new Line(start, end);
+        }
 
-public:
-    Circle(Point center, int radius) : center(center), radius(radius) {}
+        void rotate(double angle) override {
+            // Реализация поворота линии
+        }
 
-    // Методы доступа
-    Point getCenter() const { return center; }
-    int getRadius() const { return radius; }
+        void mirror(bool vertical) override {
+            start.mirror(vertical);
+            end.mirror(vertical);
+        }
+    };
 
-    void draw(HDC hdc) override {
-        Ellipse(hdc, center.x - radius, center.y - radius, center.x + radius, center.y + radius);
-    }
+    // Круг
+    class Circle : public Shape {
+    protected:
+        Point center;
+        int radius;
 
-    bool isClicked(int x, int y) {
-        int dx = x - center.x;
-        int dy = y - center.y;
-        return (dx * dx + dy * dy <= radius * radius);
-    }
+    public:
+        Circle(Point center, int radius) : center(center), radius(radius) {}
 
-    void move(int dx, int dy) override {
-        center.move(dx, dy);
-    }
+        // Методы доступа
+        Point getCenter() const { return center; }
+        int getRadius() const { return radius; }
 
-    Shape* copy() const override {
-        return new Circle(center, radius);
-    }
+        void draw(HDC hdc) override {
+            Ellipse(hdc, center.x - radius, center.y - radius, center.x + radius, center.y + radius);
+        }
 
-    void rotate(double angle) override {
-        // Поворот круга не имеет смысла
-    }
+        bool isClicked(int x, int y) {
+            int dx = x - center.x;
+            int dy = y - center.y;
+            return (dx * dx + dy * dy <= radius * radius);
+        }
 
-    void mirror(bool vertical) override {
-        center.mirror(vertical);
-    }
-};
+        void move(int dx, int dy) override {
+            center.move(dx, dy);
+        }
 
-namespace MyArc {
+        Shape* copy() const override {
+            return new Circle(center, radius);
+        }
+
+        void rotate(double angle) override {
+            // Поворот круга не имеет смысла
+        }
+
+        void mirror(bool vertical) override {
+            center.mirror(vertical);
+        }
+    };
+
     class Arc : public Shape {
     public:
         Point center;
@@ -222,149 +222,178 @@ namespace MyArc {
         }
 
     };
+
+    class Ring : public Shape {
+    public:
+        Circle outerCircle;
+        Circle innerCircle;
+
+        Ring(Point center, int outerRadius, int innerRadius)
+            : outerCircle(center, outerRadius), innerCircle(center, innerRadius) {}
+
+        void draw(HDC hdc) override {
+            outerCircle.draw(hdc);
+            innerCircle.draw(hdc);
+        }
+
+        void move(int dx, int dy) override {
+            outerCircle.move(dx, dy);
+            innerCircle.move(dx, dy);
+        }
+
+        Shape* copy() const override {
+            return new Ring(outerCircle.getCenter(), outerCircle.getRadius(), innerCircle.getRadius());
+        }
+
+        void rotate(double angle) override {
+            // Кольцо не имеет смысла вращать
+        }
+
+        void mirror(bool vertical) override {
+            outerCircle.mirror(vertical);
+            innerCircle.mirror(vertical);
+        }
+
+        bool isClicked(int x, int y) override {
+            int dx = x - outerCircle.getCenter().x;
+            int dy = y - outerCircle.getCenter().y;
+
+            // Проверяем, находится ли точка внутри внешнего круга и снаружи внутреннего
+            bool insideOuter = (dx * dx + dy * dy <= outerCircle.getRadius() * outerCircle.getRadius());
+            bool insideInner = (dx * dx + dy * dy <= innerCircle.getRadius() * innerCircle.getRadius());
+
+            return insideOuter && !insideInner; // Внутри внешнего и снаружи внутреннего
+        }
+    };
+
+    class Polyline : public Shape {
+    public:
+        std::vector<Point> points;
+
+        Polyline(const std::vector<Point>& points) : points(points) {}
+
+        void draw(HDC hdc) override {
+            for (size_t i = 0; i < points.size() - 1; ++i) {
+                MoveToEx(hdc, points[i].x, points[i].y, NULL);
+                LineTo(hdc, points[i + 1].x, points[i + 1].y);
+            }
+        }
+
+        void move(int dx, int dy) override {
+            for (Point& p : points) {
+                p.move(dx, dy);
+            }
+        }
+
+        Shape* copy() const override {
+            return new Polyline(points);
+        }
+
+        void rotate(double angle) override {
+            // Логика вращения ломаной
+        }
+
+        void mirror(bool vertical) override {
+            for (Point& p : points) {
+                p.mirror(vertical);
+            }
+        }
+
+        bool isClicked(int x, int y) override {
+            int tolerance = 5; // Допустимое расстояние от линии
+
+            for (size_t i = 0; i < points.size() - 1; ++i) {
+                int dx = points[i + 1].x - points[i].x;
+                int dy = points[i + 1].y - points[i].y;
+
+                // Уравнение линии: Ax + By + C = 0
+                double A = dy;
+                double B = -dx;
+                double C = dx * points[i].y - dy * points[i].x;
+
+                // Расстояние от точки до линии
+                double distance = std::abs(A * x + B * y + C) / std::sqrt(A * A + B * B);
+
+                if (distance < tolerance) {
+                    return true; // Клик на линии
+                }
+            }
+            return false; // Не попал в полилинию
+        }
+    };
+
+    class Polygon : public Polyline {
+    public:
+        Polygon(const std::vector<Point>& points) : Polyline(points) {}
+
+        void draw(HDC hdc) override {
+            Polyline::draw(hdc);
+            MoveToEx(hdc, points.back().x, points.back().y, NULL);
+            LineTo(hdc, points[0].x, points[0].y);
+        }
+
+        Shape* copy() const override {
+            return new Polygon(points);
+        }
+
+        bool isClicked(int x, int y) override {
+            bool inside = false;
+
+            for (size_t i = 0, j = points.size() - 1; i < points.size(); j = i++) {
+                if (((points[i].y > y) != (points[j].y > y)) &&
+                    (x < (points[j].x - points[i].x) * (y - points[i].y) / (points[j].y - points[i].y) + points[i].x)) {
+                    inside = !inside;
+                }
+            }
+            return inside; // Внутри многоугольника
+        }
+    };
+
+    class Triangle : public Polygon {
+    public:
+        Triangle(Point p1, Point p2, Point p3) : Polygon({ p1, p2, p3 }) {}
+    };
+
+    class Parallelogram : public Polygon {
+    public:
+        Parallelogram(Point p1, Point p2, Point p3, Point p4)
+            : Polygon({ p1, p2, p3, p4 }) {}
+    };
 }
 
-class Ring : public Shape {
-public:
-    Circle outerCircle;
-    Circle innerCircle;
-
-    Ring(Point center, int outerRadius, int innerRadius)
-        : outerCircle(center, outerRadius), innerCircle(center, innerRadius) {}
-
-    void draw(HDC hdc) override {
-        outerCircle.draw(hdc);
-        innerCircle.draw(hdc);
-    }
-
-    void move(int dx, int dy) override {
-        outerCircle.move(dx, dy);
-        innerCircle.move(dx, dy);
-    }
-
-    Shape* copy() const override {
-        return new Ring(outerCircle.getCenter(), outerCircle.getRadius(), innerCircle.getRadius());
-    }
-
-    void rotate(double angle) override {
-        // Кольцо не имеет смысла вращать
-    }
-
-    void mirror(bool vertical) override {
-        outerCircle.mirror(vertical);
-        innerCircle.mirror(vertical);
-    }
-
-    bool isClicked(int x, int y) override {
-        int dx = x - outerCircle.getCenter().x;
-        int dy = y - outerCircle.getCenter().y;
-
-        // Проверяем, находится ли точка внутри внешнего круга и снаружи внутреннего
-        bool insideOuter = (dx * dx + dy * dy <= outerCircle.getRadius() * outerCircle.getRadius());
-        bool insideInner = (dx * dx + dy * dy <= innerCircle.getRadius() * innerCircle.getRadius());
-
-        return insideOuter && !insideInner; // Внутри внешнего и снаружи внутреннего
-    }
-};
-
-class Polyline : public Shape {
-public:
-    std::vector<Point> points;
-
-    Polyline(const std::vector<Point>& points) : points(points) {}
-
-    void draw(HDC hdc) override {
-        for (size_t i = 0; i < points.size() - 1; ++i) {
-            MoveToEx(hdc, points[i].x, points[i].y, NULL);
-            LineTo(hdc, points[i + 1].x, points[i + 1].y);
-        }
-    }
-
-    void move(int dx, int dy) override {
-        for (Point& p : points) {
-            p.move(dx, dy);
-        }
-    }
-
-    Shape* copy() const override {
-        return new Polyline(points);
-    }
-
-    void rotate(double angle) override {
-        // Логика вращения ломаной
-    }
-
-    void mirror(bool vertical) override {
-        for (Point& p : points) {
-            p.mirror(vertical);
-        }
-    }
-
-    bool isClicked(int x, int y) override {
-        int tolerance = 5; // Допустимое расстояние от линии
-
-        for (size_t i = 0; i < points.size() - 1; ++i) {
-            int dx = points[i + 1].x - points[i].x;
-            int dy = points[i + 1].y - points[i].y;
-
-            // Уравнение линии: Ax + By + C = 0
-            double A = dy;
-            double B = -dx;
-            double C = dx * points[i].y - dy * points[i].x;
-
-            // Расстояние от точки до линии
-            double distance = std::abs(A * x + B * y + C) / std::sqrt(A * A + B * B);
-
-            if (distance < tolerance) {
-                return true; // Клик на линии
+// Функция для показа диалога и получения количества точек
+int ShowPointDialog(HWND hwnd) {
+    INT_PTR ret = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG_POINTS), hwnd, [](HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) -> INT_PTR {
+        switch (message) {
+        case WM_INITDIALOG:
+            return (INT_PTR)TRUE;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDOK) {
+                char buffer[256];
+                GetDlgItemText(hDlg, IDC_EDIT_POINTS, buffer, 256);
+                int numPoints = atoi(buffer);
+                EndDialog(hDlg, numPoints);
+                return (INT_PTR)TRUE;
             }
-        }
-        return false; // Не попал в полилинию
-    }
-};
-
-class Polygon : public Polyline {
-public:
-    Polygon(const std::vector<Point>& points) : Polyline(points) {}
-
-    void draw(HDC hdc) override {
-        Polyline::draw(hdc);
-        MoveToEx(hdc, points.back().x, points.back().y, NULL);
-        LineTo(hdc, points[0].x, points[0].y);
-    }
-
-    Shape* copy() const override {
-        return new Polygon(points);
-    }
-
-    bool isClicked(int x, int y) override {
-        bool inside = false;
-
-        for (size_t i = 0, j = points.size() - 1; i < points.size(); j = i++) {
-            if (((points[i].y > y) != (points[j].y > y)) &&
-                (x < (points[j].x - points[i].x) * (y - points[i].y) / (points[j].y - points[i].y) + points[i].x)) {
-                inside = !inside;
+            else if (LOWORD(wParam) == IDCANCEL) {
+                EndDialog(hDlg, 0);
+                return (INT_PTR)TRUE;
             }
+            break;
         }
-        return inside; // Внутри многоугольника
-    }
-};
+        return (INT_PTR)FALSE;
+        });
 
-class Triangle : public Polygon {
-public:
-    Triangle(Point p1, Point p2, Point p3) : Polygon({ p1, p2, p3 }) {}
-};
-
-class Parallelogram : public Polygon {
-public:
-    Parallelogram(Point p1, Point p2, Point p3, Point p4)
-        : Polygon({ p1, p2, p3, p4 }) {}
-};
+    return ret; // Возвращаем количество точек
+}
 
 // Основная логика для окна
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    static std::vector<Shape*> shapes;
-    static Shape* selectedShape = nullptr;
+    static std::vector<MyShapes::Shape*> shapes;
+    static MyShapes::Shape* selectedShape = nullptr;
+
+    static int numPoints = 0;
+    static std::vector<MyShapes::Point> points;
 
     enum Mode {
         MODE_SELECT,
@@ -385,7 +414,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     static Mode mode = MODE_SELECT;
 
-    static Point startPoint, endPoint;
+    static MyShapes::Point startPoint, endPoint;
     HDC hdc;
     PAINTSTRUCT ps;
 
@@ -399,6 +428,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     break;
 
     case WM_COMMAND:
+    {
+        // Общая обработка для всех фигур, которые требуют диалог ввода точек
+        bool shapeRequiresPoints = false;
+        Mode newMode;
+
         switch (LOWORD(wParam)) {
         case IDM_ADD_LINE:
             mode = MODE_ADD_LINE_FIRST_POINT;
@@ -428,20 +462,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             break;
         case IDM_ADD_POLYLINE:
-            mode = MODE_ADD_POLYLINE_FIRST_POINT; // Выбор режима создания Polyline
-            break;
-        case IDM_ADD_POLYGON:
-            mode = MODE_ADD_POLYGON_FIRST_POINT; // Выбор режима создания Polygon
-            break;
-        case IDM_ADD_TRIANGLE:
-            mode = MODE_ADD_TRIANGLE_FIRST_POINT; // Выбор режима создания Triangle
-            break;
-        case IDM_ADD_PARALLELOGRAM:
-            mode = MODE_ADD_PARALLELOGRAM_FIRST_POINT; // Выбор режима создания Parallelogram
+            newMode = MODE_ADD_POLYLINE_FIRST_POINT;
+            shapeRequiresPoints = true;
             break;
 
+        case IDM_ADD_POLYGON:
+            newMode = MODE_ADD_POLYGON_FIRST_POINT;
+            shapeRequiresPoints = true;
+            break;
+
+        case IDM_ADD_TRIANGLE:
+            mode = MODE_ADD_TRIANGLE_FIRST_POINT;
+            break;
+
+        case IDM_ADD_PARALLELOGRAM:
+            mode = MODE_ADD_PARALLELOGRAM_FIRST_POINT;
+            break;
         }
+
+        if (shapeRequiresPoints) {
+            numPoints = ShowPointDialog(hwnd); // Показываем диалог для ввода количества точек
+            if (numPoints > 0) {
+                points.clear(); // Очищаем статический массив точек
+                mode = newMode; // Устанавливаем режим для добавления точек
+            }
+            else {
+                mode = MODE_SELECT; // Возвращаемся в режим выбора, если количество точек не введено
+            }
+        }
+
         break;
+    }
 
     case WM_LBUTTONDOWN:
     {
@@ -451,7 +502,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         switch (mode) {
         case MODE_SELECT:
             selectedShape = nullptr;
-            for (Shape* shape : shapes) {
+            for (MyShapes::Shape* shape : shapes) {
                 if (shape->isClicked(xPos, yPos)) {
                     selectedShape = shape;
                     break;
@@ -460,61 +511,100 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
 
         case MODE_ADD_LINE_FIRST_POINT:
-            startPoint = Point(xPos, yPos);
+            startPoint = MyShapes::Point(xPos, yPos);
             mode = MODE_ADD_LINE_SECOND_POINT;
             break;
 
         case MODE_ADD_LINE_SECOND_POINT:
-            endPoint = Point(xPos, yPos);
-            shapes.push_back(new Line(startPoint, endPoint));
+            endPoint = MyShapes::Point(xPos, yPos);
+            shapes.push_back(new MyShapes::Line(startPoint, endPoint));
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
 
         case MODE_ADD_CIRCLE_FIRST_POINT:
-            startPoint = Point(xPos, yPos);
+            startPoint = MyShapes::Point(xPos, yPos);
             mode = MODE_ADD_CIRCLE_SECOND_POINT;
             break;
 
         case MODE_ADD_CIRCLE_SECOND_POINT:
         {
             int radius = sqrt(pow(xPos - startPoint.x, 2) + pow(yPos - startPoint.y, 2));
-            shapes.push_back(new Circle(startPoint, radius));
+            shapes.push_back(new MyShapes::Circle(startPoint, radius));
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
         }
 
         case MODE_ADD_ARC_FIRST_POINT:
-            startPoint = Point(xPos, yPos);
+            startPoint = MyShapes::Point(xPos, yPos);
             mode = MODE_ADD_ARC_SECOND_POINT;
             break;
 
         case MODE_ADD_ARC_SECOND_POINT:
         {
-            endPoint = Point(xPos, yPos);
+            endPoint = MyShapes::Point(xPos, yPos);
             int radiusArc = sqrt(pow(startPoint.x - endPoint.x, 2) + pow(startPoint.y - endPoint.y, 2)); // Расчет радиуса
-            shapes.push_back(new MyArc::Arc(startPoint, radiusArc, 45 * M_PI / 180, 135 * M_PI / 180)); // Пример углов в радианах
+            shapes.push_back(new MyShapes::Arc(startPoint, radiusArc, 45 * M_PI / 180, 135 * M_PI / 180)); // Пример углов в радианах
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
         }
 
         case MODE_ADD_RING_FIRST_POINT:
-            startPoint = Point(xPos, yPos);
+            startPoint = MyShapes::Point(xPos, yPos);
             mode = MODE_ADD_RING_SECOND_POINT;
             break;
 
         case MODE_ADD_RING_SECOND_POINT:
         {
             int outerRadius = sqrt(pow(xPos - startPoint.x, 2) + pow(yPos - startPoint.y, 2));
-            shapes.push_back(new Ring(startPoint, outerRadius, outerRadius / 2)); // Пример кольца
+            shapes.push_back(new MyShapes::Ring(startPoint, outerRadius, outerRadius / 2)); // Пример кольца
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
         }
 
-
+        // Polyline
+        case MODE_ADD_POLYLINE_FIRST_POINT:
+            points.push_back(MyShapes::Point(xPos, yPos));
+            if (points.size() == numPoints) {
+                shapes.push_back(new MyShapes::Polyline(points));
+                points.clear();
+                mode = MODE_SELECT;
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            break;
+            // Polygon
+        case MODE_ADD_POLYGON_FIRST_POINT:
+            points.push_back(MyShapes::Point(xPos, yPos));
+            if (points.size() == numPoints) {
+                shapes.push_back(new MyShapes::Polygon(points));
+                points.clear();
+                mode = MODE_SELECT;
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            break;
+            // Triangle
+        case MODE_ADD_TRIANGLE_FIRST_POINT:
+            points.push_back(MyShapes::Point(xPos, yPos));
+            if (points.size() == 3) {
+                shapes.push_back(new MyShapes::Triangle(points[0], points[1], points[2]));
+                points.clear();
+                mode = MODE_SELECT;
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            break;
+            // Parallelogram
+        case MODE_ADD_PARALLELOGRAM_FIRST_POINT:
+            points.push_back(MyShapes::Point(xPos, yPos));
+            if (points.size() == 4) {
+                shapes.push_back(new MyShapes::Parallelogram(points[0], points[1], points[2], points[3]));
+                points.clear();
+                mode = MODE_SELECT;
+                InvalidateRect(hwnd, NULL, TRUE);
+            }
+            break;
 
         }
 
@@ -545,14 +635,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_PAINT:
         hdc = BeginPaint(hwnd, &ps);
-        for (Shape* shape : shapes) {
+        for (MyShapes::Shape* shape : shapes) {
             shape->draw(hdc);
         }
         EndPaint(hwnd, &ps);
         break;
 
     case WM_DESTROY:
-        for (Shape* shape : shapes) {
+        for (MyShapes::Shape* shape : shapes) {
             delete shape;
         }
         PostQuitMessage(0);
@@ -586,9 +676,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UpdateWindow(hwnd);
 
     // Инициализация фигур
-    std::vector<Shape*> shapes;
-    shapes.push_back(new Circle(Point(200, 200), 100));
-    shapes.push_back(new Line(Point(100, 100), Point(300, 300)));
+    std::vector<MyShapes::Shape*> shapes;
+    shapes.push_back(new MyShapes::Circle(MyShapes::Point(200, 200), 100));
+    shapes.push_back(new MyShapes::Line(MyShapes::Point(100, 100), MyShapes::Point(300, 300)));
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0) > 0) {

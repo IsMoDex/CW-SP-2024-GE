@@ -1,5 +1,7 @@
 // resource.h
-#define IDR_MENU1						101
+#define IDC_STATIC						-1
+
+#define IDR_MENU1                       101
 #define IDC_MYICON                      2
 #define IDD_CWSPV22_DIALOG              102
 #define IDR_MAINFRAME                   128
@@ -10,11 +12,15 @@
 #define IDM_ADD_ARC                     32773
 #define IDM_ADD_RING                    32774
 #define IDM_SELECT_MODE                 32775
-#define IDM_MIRROR_VERTICAL              32776
-#define IDM_MIRROR_HORIZONTAL            32777
+#define IDM_MIRROR_VERTICAL             32776
+#define IDM_MIRROR_HORIZONTAL           32777
 
 // Новые идентификаторы для фигур
-#define IDM_ADD_POLYLINE                32778 // Добавление полилинии
-#define IDM_ADD_POLYGON                 32779 // Добавление многоугольника
-#define IDM_ADD_TRIANGLE                32780 // Добавление треугольника
-#define IDM_ADD_PARALLELOGRAM           32781 // Добавление параллелограмма
+#define IDM_ADD_POLYLINE                32778
+#define IDM_ADD_POLYGON                 32779
+#define IDM_ADD_TRIANGLE                32780
+#define IDM_ADD_PARALLELOGRAM           32781
+
+// Новые идентификаторы для диалога и его элементов
+#define IDD_DIALOG_POINTS               200
+#define IDC_EDIT_POINTS                 201
