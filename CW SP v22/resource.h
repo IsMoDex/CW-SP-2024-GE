@@ -14,6 +14,14 @@
 #define IDM_SELECT_MODE                 32775
 #define IDM_MIRROR_VERTICAL             32776
 #define IDM_MIRROR_HORIZONTAL           32777
+#define IDM_SHOW_LINES                  32782
+#define IDM_SHOW_CIRCLES                32783
+#define IDM_SHOW_ARCS                   32784
+#define IDM_SHOW_RINGS                  32785
+#define IDM_SHOW_POLYLINES              32786
+#define IDM_SHOW_POLYGONS               32787
+#define IDM_SHOW_TRIANGLES              32788
+#define IDM_SHOW_PARALLELOGRAMS         32789
 
 // Новые идентификаторы для фигур
 #define IDM_ADD_POLYLINE                32778

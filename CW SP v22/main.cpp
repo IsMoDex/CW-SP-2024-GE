@@ -418,6 +418,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     PAINTSTRUCT ps;
 
+    // Флаги отображения для каждой фигуры
+    static bool showLines = true;
+    static bool showCircles = true;
+    static bool showArcs = true;
+    static bool showRings = true;
+    static bool showPolylines = true;
+    static bool showPolygons = true;
+    static bool showTriangles = true;
+    static bool showParallelograms = true;
+
     switch (msg) {
     case WM_CREATE:
     {
@@ -477,6 +487,47 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case IDM_ADD_PARALLELOGRAM:
             mode = MODE_ADD_PARALLELOGRAM_FIRST_POINT;
+            break;
+
+        case IDM_SHOW_LINES:
+            showLines = !showLines;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_LINES, showLines ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE); // Перерисовать окно
+            break;
+        case IDM_SHOW_CIRCLES:
+            showCircles = !showCircles;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_CIRCLES, showCircles ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_ARCS:
+            showArcs = !showArcs;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_ARCS, showArcs ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_RINGS:
+            showRings = !showRings;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_RINGS, showRings ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_POLYLINES:
+            showPolylines = !showPolylines;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_POLYLINES, showPolylines ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_POLYGONS:
+            showPolygons = !showPolygons;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_POLYGONS, showPolygons ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_TRIANGLES:
+            showTriangles = !showTriangles;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_TRIANGLES, showTriangles ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
+            break;
+        case IDM_SHOW_PARALLELOGRAMS:
+            showParallelograms = !showParallelograms;
+            CheckMenuItem(GetMenu(hwnd), IDM_SHOW_PARALLELOGRAMS, showParallelograms ? MF_CHECKED : MF_UNCHECKED);
+            InvalidateRect(hwnd, NULL, TRUE);
             break;
         }
 
@@ -636,7 +687,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_PAINT:
         hdc = BeginPaint(hwnd, &ps);
         for (MyShapes::Shape* shape : shapes) {
-            shape->draw(hdc);
+            // Проверяем тип фигуры перед рисованием
+            if ((dynamic_cast<MyShapes::Line*>(shape) && showLines) ||
+                (dynamic_cast<MyShapes::Circle*>(shape) && showCircles) ||
+                (dynamic_cast<MyShapes::Arc*>(shape) && showArcs) ||
+                (dynamic_cast<MyShapes::Ring*>(shape) && showRings) ||
+                (dynamic_cast<MyShapes::Polyline*>(shape) && showPolylines) ||
+                (dynamic_cast<MyShapes::Polygon*>(shape) && showPolygons) ||
+                (dynamic_cast<MyShapes::Triangle*>(shape) && showTriangles) ||
+                (dynamic_cast<MyShapes::Parallelogram*>(shape) && showParallelograms)) {
+                shape->draw(hdc);
+            }
         }
         EndPaint(hwnd, &ps);
         break;
