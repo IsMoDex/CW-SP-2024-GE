@@ -375,8 +375,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MODE_ADD_ARC_FIRST_POINT,
         MODE_ADD_ARC_SECOND_POINT,
         MODE_ADD_RING_FIRST_POINT,
-        MODE_ADD_RING_SECOND_POINT
+        MODE_ADD_RING_SECOND_POINT,
+        MODE_ADD_POLYLINE_FIRST_POINT,
+        MODE_ADD_POLYGON_FIRST_POINT,  
+        MODE_ADD_TRIANGLE_FIRST_POINT, 
+        MODE_ADD_PARALLELOGRAM_FIRST_POINT
     };
+
 
     static Mode mode = MODE_SELECT;
 
@@ -422,6 +427,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
             }
             break;
+        case IDM_ADD_POLYLINE:
+            mode = MODE_ADD_POLYLINE_FIRST_POINT; // Выбор режима создания Polyline
+            break;
+        case IDM_ADD_POLYGON:
+            mode = MODE_ADD_POLYGON_FIRST_POINT; // Выбор режима создания Polygon
+            break;
+        case IDM_ADD_TRIANGLE:
+            mode = MODE_ADD_TRIANGLE_FIRST_POINT; // Выбор режима создания Triangle
+            break;
+        case IDM_ADD_PARALLELOGRAM:
+            mode = MODE_ADD_PARALLELOGRAM_FIRST_POINT; // Выбор режима создания Parallelogram
+            break;
+
         }
         break;
 
@@ -496,6 +514,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
         }
 
+
+
         }
 
         break;
@@ -543,7 +563,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     }
     return 0;
 }
-
 
 // Основная функция
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
