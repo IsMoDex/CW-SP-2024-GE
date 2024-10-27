@@ -128,8 +128,7 @@ namespace MyShapes {
         }
 
         void mirror(bool vertical) override {
-            start.mirror(vertical);
-            end.mirror(vertical);
+
         }
     };
 
@@ -175,7 +174,7 @@ namespace MyShapes {
         }
 
         void mirror(bool vertical) override {
-            center.mirror(vertical);
+
         }
     };
 
@@ -369,8 +368,26 @@ namespace MyShapes {
         }
 
         void mirror(bool vertical) override {
+            if (points.empty()) return;
+
+            // Находим центр ломаной как среднее всех точек
+            double centerX = 0, centerY = 0;
+            for (const Point& p : points) {
+                centerX += p.x;
+                centerY += p.y;
+            }
+            centerX /= points.size();
+            centerY /= points.size();
+            Point center(centerX, centerY);
+
+            // Зеркально отражаем каждую точку относительно центра
             for (Point& p : points) {
-                p.mirror(vertical);
+                if (vertical) {
+                    p.x = center.x - (p.x - center.x);
+                }
+                else {
+                    p.y = center.y - (p.y - center.y);
+                }
             }
         }
 
