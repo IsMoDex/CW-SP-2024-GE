@@ -1,4 +1,4 @@
-#include <windows.h>
+п»ї#include <windows.h>
 #include <vector>
 #include <cmath>
 #include "resource.h"
@@ -6,32 +6,39 @@
 #define M_PI 3.1415926535
 
 namespace MyShapes {
-    // Определим интерфейс для всех фигур
+    // РћРїСЂРµРґРµР»РёРј РёРЅС‚РµСЂС„РµР№СЃ РґР»СЏ РІСЃРµС… С„РёРіСѓСЂ
     class Shape {
+    protected:
+        COLORREF color;
     public:
+
+        void setColor(COLORREF newColor) {
+            color = newColor;
+        }
+
         virtual void draw(HDC hdc) = 0;
         virtual void move(int dx, int dy) = 0;
         virtual Shape* copy() const = 0;
         virtual void rotate(double angle) = 0;
         virtual void mirror(bool vertical) = 0;
 
-        // Добавляем виртуальный метод isClicked
+        // Р”РѕР±Р°РІР»СЏРµРј РІРёСЂС‚СѓР°Р»СЊРЅС‹Р№ РјРµС‚РѕРґ isClicked
         virtual bool isClicked(int x, int y) = 0;
 
-        virtual ~Shape() {}  // Виртуальный деструктор для безопасного удаления производных классов
+        virtual ~Shape() {}  // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№ РґРµСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ Р±РµР·РѕРїР°СЃРЅРѕРіРѕ СѓРґР°Р»РµРЅРёСЏ РїСЂРѕРёР·РІРѕРґРЅС‹С… РєР»Р°СЃСЃРѕРІ
     };
 
-    // Точка
+    // РўРѕС‡РєР°
     class Point : public Shape {
     public:
         int x, y;
 
-        Point() : x(0), y(0) {}  // Конструктор по умолчанию
+        Point() : x(0), y(0) {}  // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 
         Point(int x, int y) : x(x), y(y) {}
 
         void draw(HDC hdc) override {
-            SetPixel(hdc, x, y, RGB(0, 0, 0));
+            SetPixel(hdc, x, y, color);
         }
 
         void move(int dx, int dy) override {
@@ -44,7 +51,7 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Поворот точки не имеет смысла
+            // РџРѕРІРѕСЂРѕС‚ С‚РѕС‡РєРё РЅРµ РёРјРµРµС‚ СЃРјС‹СЃР»Р°
         }
 
         void mirror(bool vertical) override {
@@ -57,11 +64,25 @@ namespace MyShapes {
         }
 
         bool isClicked(int x, int y) override {
-            return this->x == x && this->y == y; // Простая проверка
+            return this->x == x && this->y == y; // РџСЂРѕСЃС‚Р°СЏ РїСЂРѕРІРµСЂРєР°
+        }
+
+        void rotateAround(const Point& center, double angle) {
+            double rad = angle * M_PI / 180.0; // РџРµСЂРµРІРѕРґРёРј СѓРіРѕР» РІ СЂР°РґРёР°РЅС‹
+            double cosAngle = cos(rad);
+            double sinAngle = sin(rad);
+
+            // РЎРјРµС‰Р°РµРј С‚РѕС‡РєСѓ Рє РЅР°С‡Р°Р»Сѓ РєРѕРѕСЂРґРёРЅР°С‚
+            double dx = x - center.x;
+            double dy = y - center.y;
+
+            // РџРѕРІРѕСЂР°С‡РёРІР°РµРј Рё РІРѕР·РІСЂР°С‰Р°РµРј С‚РѕС‡РєСѓ РѕР±СЂР°С‚РЅРѕ
+            x = center.x + (dx * cosAngle - dy * sinAngle);
+            y = center.y + (dx * sinAngle + dy * cosAngle);
         }
     };
 
-    // Линия (отрезок)
+    // Р›РёРЅРёСЏ (РѕС‚СЂРµР·РѕРє)
     class Line : public Shape {
     protected:
         Point start, end;
@@ -69,12 +90,18 @@ namespace MyShapes {
         Line(Point start, Point end) : start(start), end(end) {}
 
         void draw(HDC hdc) override {
+            HPEN pen = CreatePen(PS_SOLID, 1, color); // РЎРѕР·РґР°РµРј РїРµСЂРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ С†РІРµС‚Р°
+            HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
             MoveToEx(hdc, start.x, start.y, NULL);
             LineTo(hdc, end.x, end.y);
+
+            SelectObject(hdc, oldPen); // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚Р°СЂРѕРµ РїРµСЂРѕ
+            DeleteObject(pen);          // РЈРґР°Р»СЏРµРј СЃРѕР·РґР°РЅРЅРѕРµ РїРµСЂРѕ
         }
 
         bool isClicked(int x, int y) {
-            // Простая проверка на попадание в линию (с учётом некоторой погрешности)
+            // РџСЂРѕСЃС‚Р°СЏ РїСЂРѕРІРµСЂРєР° РЅР° РїРѕРїР°РґР°РЅРёРµ РІ Р»РёРЅРёСЋ (СЃ СѓС‡С‘С‚РѕРј РЅРµРєРѕС‚РѕСЂРѕР№ РїРѕРіСЂРµС€РЅРѕСЃС‚Рё)
             int tolerance = 5;
             int dx = end.x - start.x;
             int dy = end.y - start.y;
@@ -92,7 +119,12 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Реализация поворота линии
+            // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ Р»РёРЅРёРё
+            Point center((start.x + end.x) / 2, (start.y + end.y) / 2);
+
+            // РџРѕРІРѕСЂР°С‡РёРІР°РµРј РѕР±Рµ С‚РѕС‡РєРё РІРѕРєСЂСѓРі С†РµРЅС‚СЂР° Р»РёРЅРёРё
+            start.rotateAround(center, angle);
+            end.rotateAround(center, angle);
         }
 
         void mirror(bool vertical) override {
@@ -101,7 +133,7 @@ namespace MyShapes {
         }
     };
 
-    // Круг
+    // РљСЂСѓРі
     class Circle : public Shape {
     protected:
         Point center;
@@ -110,12 +142,18 @@ namespace MyShapes {
     public:
         Circle(Point center, int radius) : center(center), radius(radius) {}
 
-        // Методы доступа
+        // РњРµС‚РѕРґС‹ РґРѕСЃС‚СѓРїР°
         Point getCenter() const { return center; }
         int getRadius() const { return radius; }
 
         void draw(HDC hdc) override {
+            HPEN pen = CreatePen(PS_SOLID, 1, color); // РЎРѕР·РґР°РµРј РїРµСЂРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ С†РІРµС‚Р°
+            HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
             Ellipse(hdc, center.x - radius, center.y - radius, center.x + radius, center.y + radius);
+
+            SelectObject(hdc, oldPen); // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚Р°СЂРѕРµ РїРµСЂРѕ
+            DeleteObject(pen);          // РЈРґР°Р»СЏРµРј СЃРѕР·РґР°РЅРЅРѕРµ РїРµСЂРѕ
         }
 
         bool isClicked(int x, int y) {
@@ -133,7 +171,7 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Поворот круга не имеет смысла
+            // РџРѕРІРѕСЂРѕС‚ РєСЂСѓРіР° РЅРµ РёРјРµРµС‚ СЃРјС‹СЃР»Р°
         }
 
         void mirror(bool vertical) override {
@@ -145,13 +183,13 @@ namespace MyShapes {
     public:
         Point center;
         int radius;
-        double startAngle, endAngle;  // Углы в радианах
+        double startAngle, endAngle;  // РЈРіР»С‹ РІ СЂР°РґРёР°РЅР°С…
 
-        // Конструктор с центром, радиусом и углами
+        // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ СЃ С†РµРЅС‚СЂРѕРј, СЂР°РґРёСѓСЃРѕРј Рё СѓРіР»Р°РјРё
         Arc(Point center, int radius, double startAngle, double endAngle)
             : center(center), radius(radius), startAngle(startAngle), endAngle(endAngle) {}
 
-        // Конструктор с центром и двумя конечными точками
+        // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ СЃ С†РµРЅС‚СЂРѕРј Рё РґРІСѓРјСЏ РєРѕРЅРµС‡РЅС‹РјРё С‚РѕС‡РєР°РјРё
         Arc(Point center, Point startPoint, Point endPoint)
             : center(center) {
             radius = sqrt(pow(startPoint.x - center.x, 2) + pow(startPoint.y - center.y, 2));
@@ -159,17 +197,23 @@ namespace MyShapes {
             endAngle = atan2(endPoint.y - center.y, endPoint.x - center.x);
         }
 
-        // Метод для рисования дуги
+        // РњРµС‚РѕРґ РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ РґСѓРіРё
         void draw(HDC hdc) override {
-            // Преобразуем углы в координаты точек на окружности
+            HPEN pen = CreatePen(PS_SOLID, 1, color); // РЎРѕР·РґР°РµРј РїРµСЂРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ С†РІРµС‚Р°
+            HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
+            // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ РєРѕРѕСЂРґРёРЅР°С‚С‹ С‚РѕС‡РµРє РЅР° РѕРєСЂСѓР¶РЅРѕСЃС‚Рё
             int xStart = center.x + radius * cos(startAngle);
             int yStart = center.y + radius * sin(startAngle);
             int xEnd = center.x + radius * cos(endAngle);
             int yEnd = center.y + radius * sin(endAngle);
 
-            // Вызов функции Arc из WinAPI для рисования дуги
+            // Р’С‹Р·РѕРІ С„СѓРЅРєС†РёРё Arc РёР· WinAPI РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ РґСѓРіРё
             ::Arc(hdc, center.x - radius, center.y - radius, center.x + radius, center.y + radius,
                 xStart, yStart, xEnd, yEnd);
+
+            SelectObject(hdc, oldPen); // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚Р°СЂРѕРµ РїРµСЂРѕ
+            DeleteObject(pen);          // РЈРґР°Р»СЏРµРј СЃРѕР·РґР°РЅРЅРѕРµ РїРµСЂРѕ
         }
 
         void move(int dx, int dy) override {
@@ -181,7 +225,12 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Логика вращения дуги (при необходимости)
+            startAngle += angle;
+            endAngle += angle;
+
+            // РџСЂРёРІРѕРґРёРј СѓРіР»С‹ Рє РґРёР°РїР°Р·РѕРЅСѓ РѕС‚ 0 РґРѕ 2ПЂ РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+            startAngle = fmod(startAngle + 2 * M_PI, 2 * M_PI);
+            endAngle = fmod(endAngle + 2 * M_PI, 2 * M_PI);
         }
 
         void mirror(bool vertical) override {
@@ -195,30 +244,30 @@ namespace MyShapes {
             }
         }
 
-        // Проверка клика на дуге
+        // РџСЂРѕРІРµСЂРєР° РєР»РёРєР° РЅР° РґСѓРіРµ
         bool isClicked(int x, int y) override {
             int dx = x - center.x;
             int dy = y - center.y;
 
-            // Проверяем, находится ли точка в пределах радиуса
+            // РџСЂРѕРІРµСЂСЏРµРј, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё С‚РѕС‡РєР° РІ РїСЂРµРґРµР»Р°С… СЂР°РґРёСѓСЃР°
             if (dx * dx + dy * dy <= radius * radius) {
-                // Вычисляем угол точки относительно центра дуги
+                // Р’С‹С‡РёСЃР»СЏРµРј СѓРіРѕР» С‚РѕС‡РєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С†РµРЅС‚СЂР° РґСѓРіРё
                 double angle = atan2(dy, dx);
 
-                // Приводим углы к диапазону от 0 до 2*PI для удобства
+                // РџСЂРёРІРѕРґРёРј СѓРіР»С‹ Рє РґРёР°РїР°Р·РѕРЅСѓ РѕС‚ 0 РґРѕ 2*PI РґР»СЏ СѓРґРѕР±СЃС‚РІР°
                 double normalizedStartAngle = fmod(startAngle + 2 * M_PI, 2 * M_PI);
                 double normalizedEndAngle = fmod(endAngle + 2 * M_PI, 2 * M_PI);
                 double normalizedAngle = fmod(angle + 2 * M_PI, 2 * M_PI);
 
-                // Проверяем, находится ли угол между startAngle и endAngle
+                // РџСЂРѕРІРµСЂСЏРµРј, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё СѓРіРѕР» РјРµР¶РґСѓ startAngle Рё endAngle
                 if (normalizedStartAngle < normalizedEndAngle) {
                     return (normalizedAngle >= normalizedStartAngle && normalizedAngle <= normalizedEndAngle);
                 }
-                else { // Обработка случаев, когда дуга пересекает 0 радиан (например, от 350° до 10°)
+                else { // РћР±СЂР°Р±РѕС‚РєР° СЃР»СѓС‡Р°РµРІ, РєРѕРіРґР° РґСѓРіР° РїРµСЂРµСЃРµРєР°РµС‚ 0 СЂР°РґРёР°РЅ (РЅР°РїСЂРёРјРµСЂ, РѕС‚ 350В° РґРѕ 10В°)
                     return (normalizedAngle >= normalizedStartAngle || normalizedAngle <= normalizedEndAngle);
                 }
             }
-            return false; // Точка вне радиуса
+            return false; // РўРѕС‡РєР° РІРЅРµ СЂР°РґРёСѓСЃР°
         }
 
     };
@@ -246,7 +295,7 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Кольцо не имеет смысла вращать
+            // РљРѕР»СЊС†Рѕ РЅРµ РёРјРµРµС‚ СЃРјС‹СЃР»Р° РІСЂР°С‰Р°С‚СЊ
         }
 
         void mirror(bool vertical) override {
@@ -258,11 +307,11 @@ namespace MyShapes {
             int dx = x - outerCircle.getCenter().x;
             int dy = y - outerCircle.getCenter().y;
 
-            // Проверяем, находится ли точка внутри внешнего круга и снаружи внутреннего
+            // РџСЂРѕРІРµСЂСЏРµРј, РЅР°С…РѕРґРёС‚СЃСЏ Р»Рё С‚РѕС‡РєР° РІРЅСѓС‚СЂРё РІРЅРµС€РЅРµРіРѕ РєСЂСѓРіР° Рё СЃРЅР°СЂСѓР¶Рё РІРЅСѓС‚СЂРµРЅРЅРµРіРѕ
             bool insideOuter = (dx * dx + dy * dy <= outerCircle.getRadius() * outerCircle.getRadius());
             bool insideInner = (dx * dx + dy * dy <= innerCircle.getRadius() * innerCircle.getRadius());
 
-            return insideOuter && !insideInner; // Внутри внешнего и снаружи внутреннего
+            return insideOuter && !insideInner; // Р’РЅСѓС‚СЂРё РІРЅРµС€РЅРµРіРѕ Рё СЃРЅР°СЂСѓР¶Рё РІРЅСѓС‚СЂРµРЅРЅРµРіРѕ
         }
     };
 
@@ -273,10 +322,16 @@ namespace MyShapes {
         Polyline(const std::vector<Point>& points) : points(points) {}
 
         void draw(HDC hdc) override {
+            HPEN pen = CreatePen(PS_SOLID, 1, color); // РЎРѕР·РґР°РµРј РїРµСЂРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ С†РІРµС‚Р°
+            HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
             for (size_t i = 0; i < points.size() - 1; ++i) {
                 MoveToEx(hdc, points[i].x, points[i].y, NULL);
                 LineTo(hdc, points[i + 1].x, points[i + 1].y);
             }
+
+            SelectObject(hdc, oldPen); // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚Р°СЂРѕРµ РїРµСЂРѕ
+            DeleteObject(pen);          // РЈРґР°Р»СЏРµРј СЃРѕР·РґР°РЅРЅРѕРµ РїРµСЂРѕ
         }
 
         void move(int dx, int dy) override {
@@ -290,7 +345,22 @@ namespace MyShapes {
         }
 
         void rotate(double angle) override {
-            // Логика вращения ломаной
+            if (points.empty()) return;
+
+            // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ РєР°Рє СЃСЂРµРґРЅРµРµ РІСЃРµС… С‚РѕС‡РµРє
+            double centerX = 0, centerY = 0;
+            for (const MyShapes::Point& p : points) {
+                centerX += p.x;
+                centerY += p.y;
+            }
+            centerX /= points.size();
+            centerY /= points.size();
+            MyShapes::Point center(centerX, centerY);
+
+            // РџРѕРІРѕСЂР°С‡РёРІР°РµРј РєР°Р¶РґСѓСЋ С‚РѕС‡РєСѓ РІРѕРєСЂСѓРі С†РµРЅС‚СЂР°
+            for (MyShapes::Point& point : points) {
+                point.rotateAround(center, angle);
+            }
         }
 
         void mirror(bool vertical) override {
@@ -300,25 +370,25 @@ namespace MyShapes {
         }
 
         bool isClicked(int x, int y) override {
-            int tolerance = 5; // Допустимое расстояние от линии
+            int tolerance = 5; // Р”РѕРїСѓСЃС‚РёРјРѕРµ СЂР°СЃСЃС‚РѕСЏРЅРёРµ РѕС‚ Р»РёРЅРёРё
 
             for (size_t i = 0; i < points.size() - 1; ++i) {
                 int dx = points[i + 1].x - points[i].x;
                 int dy = points[i + 1].y - points[i].y;
 
-                // Уравнение линии: Ax + By + C = 0
+                // РЈСЂР°РІРЅРµРЅРёРµ Р»РёРЅРёРё: Ax + By + C = 0
                 double A = dy;
                 double B = -dx;
                 double C = dx * points[i].y - dy * points[i].x;
 
-                // Расстояние от точки до линии
+                // Р Р°СЃСЃС‚РѕСЏРЅРёРµ РѕС‚ С‚РѕС‡РєРё РґРѕ Р»РёРЅРёРё
                 double distance = std::abs(A * x + B * y + C) / std::sqrt(A * A + B * B);
 
                 if (distance < tolerance) {
-                    return true; // Клик на линии
+                    return true; // РљР»РёРє РЅР° Р»РёРЅРёРё
                 }
             }
-            return false; // Не попал в полилинию
+            return false; // РќРµ РїРѕРїР°Р» РІ РїРѕР»РёР»РёРЅРёСЋ
         }
     };
 
@@ -327,9 +397,15 @@ namespace MyShapes {
         Polygon(const std::vector<Point>& points) : Polyline(points) {}
 
         void draw(HDC hdc) override {
+            HPEN pen = CreatePen(PS_SOLID, 1, color); // РЎРѕР·РґР°РµРј РїРµСЂРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ С†РІРµС‚Р°
+            HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
             Polyline::draw(hdc);
             MoveToEx(hdc, points.back().x, points.back().y, NULL);
             LineTo(hdc, points[0].x, points[0].y);
+
+            SelectObject(hdc, oldPen); // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃС‚Р°СЂРѕРµ РїРµСЂРѕ
+            DeleteObject(pen);          // РЈРґР°Р»СЏРµРј СЃРѕР·РґР°РЅРЅРѕРµ РїРµСЂРѕ
         }
 
         Shape* copy() const override {
@@ -345,23 +421,50 @@ namespace MyShapes {
                     inside = !inside;
                 }
             }
-            return inside; // Внутри многоугольника
+            return inside; // Р’РЅСѓС‚СЂРё РјРЅРѕРіРѕСѓРіРѕР»СЊРЅРёРєР°
         }
     };
 
     class Triangle : public Polygon {
     public:
         Triangle(Point p1, Point p2, Point p3) : Polygon({ p1, p2, p3 }) {}
+
+        void rotate(double angle) override {
+            // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ С‚СЂРµСѓРіРѕР»СЊРЅРёРєР° РєР°Рє СЃСЂРµРґРЅРµРµ РІСЃРµС… С‚РѕС‡РµРє
+            Point center(
+                (points[0].x + points[1].x + points[2].x) / 3,
+                (points[0].y + points[1].y + points[2].y) / 3
+            );
+
+            // РџРѕРІРѕСЂР°С‡РёРІР°РµРј РєР°Р¶РґСѓСЋ С‚РѕС‡РєСѓ РІРѕРєСЂСѓРі С†РµРЅС‚СЂР°
+            for (Point& point : points) {
+                point.rotateAround(center, angle);
+            }
+        }
     };
 
     class Parallelogram : public Polygon {
     public:
         Parallelogram(Point p1, Point p2, Point p3, Point p4)
             : Polygon({ p1, p2, p3, p4 }) {}
+
+        void rotate(double angle) override {
+            // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ РїР°СЂР°Р»Р»РµР»РѕРіСЂР°РјРјР° РєР°Рє СЃСЂРµРґРЅРµРµ РІСЃРµС… С‚РѕС‡РµРє
+            Point center(
+                (points[0].x + points[1].x + points[2].x + points[3].x) / 4,
+                (points[0].y + points[1].y + points[2].y + points[3].y) / 4
+            );
+
+            // РџРѕРІРѕСЂР°С‡РёРІР°РµРј РєР°Р¶РґСѓСЋ С‚РѕС‡РєСѓ РІРѕРєСЂСѓРі С†РµРЅС‚СЂР°
+            for (Point& point : points) {
+                point.rotateAround(center, angle);
+            }
+        }
     };
+
 }
 
-// Функция для показа диалога и получения количества точек
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ РїРѕРєР°Р·Р° РґРёР°Р»РѕРіР° Рё РїРѕР»СѓС‡РµРЅРёСЏ РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕС‡РµРє
 int ShowPointDialog(HWND hwnd) {
     INT_PTR ret = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG_POINTS), hwnd, [](HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) -> INT_PTR {
         switch (message) {
@@ -384,10 +487,10 @@ int ShowPointDialog(HWND hwnd) {
         return (INT_PTR)FALSE;
         });
 
-    return ret; // Возвращаем количество точек
+    return ret; // Р’РѕР·РІСЂР°С‰Р°РµРј РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
 }
 
-// Основная логика для окна
+// РћСЃРЅРѕРІРЅР°СЏ Р»РѕРіРёРєР° РґР»СЏ РѕРєРЅР°
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static std::vector<MyShapes::Shape*> shapes;
     static MyShapes::Shape* selectedShape = nullptr;
@@ -418,7 +521,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     PAINTSTRUCT ps;
 
-    // Флаги отображения для каждой фигуры
+    // Р¤Р»Р°РіРё РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РґР»СЏ РєР°Р¶РґРѕР№ С„РёРіСѓСЂС‹
     static bool showLines = true;
     static bool showCircles = true;
     static bool showArcs = true;
@@ -431,7 +534,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CREATE:
     {
-        // Загружаем меню из ресурса
+        // Р—Р°РіСЂСѓР¶Р°РµРј РјРµРЅСЋ РёР· СЂРµСЃСѓСЂСЃР°
         HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU1));
         SetMenu(hwnd, hMenu);
     }
@@ -439,7 +542,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_COMMAND:
     {
-        // Общая обработка для всех фигур, которые требуют диалог ввода точек
+        // РћР±С‰Р°СЏ РѕР±СЂР°Р±РѕС‚РєР° РґР»СЏ РІСЃРµС… С„РёРіСѓСЂ, РєРѕС‚РѕСЂС‹Рµ С‚СЂРµР±СѓСЋС‚ РґРёР°Р»РѕРі РІРІРѕРґР° С‚РѕС‡РµРє
         bool shapeRequiresPoints = false;
         Mode newMode;
 
@@ -459,16 +562,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_SELECT_MODE:
             mode = MODE_SELECT;
             break;
-        case IDM_MIRROR_VERTICAL:  // Обработка зеркального отображения
+        case IDM_MIRROR_VERTICAL:  // РћР±СЂР°Р±РѕС‚РєР° Р·РµСЂРєР°Р»СЊРЅРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
             if (selectedShape) {
-                selectedShape->mirror(true); // Вертикальное отражение
-                InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
+                selectedShape->mirror(true); // Р’РµСЂС‚РёРєР°Р»СЊРЅРѕРµ РѕС‚СЂР°Р¶РµРЅРёРµ
+                InvalidateRect(hwnd, NULL, TRUE); // РћР±РЅРѕРІР»СЏРµРј РѕРєРЅРѕ
             }
             break;
-        case IDM_MIRROR_HORIZONTAL:  // Обработка зеркального отображения
+        case IDM_MIRROR_HORIZONTAL:  // РћР±СЂР°Р±РѕС‚РєР° Р·РµСЂРєР°Р»СЊРЅРѕРіРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
             if (selectedShape) {
-                selectedShape->mirror(false); // Вертикальное отражение
-                InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
+                selectedShape->mirror(false); // Р’РµСЂС‚РёРєР°Р»СЊРЅРѕРµ РѕС‚СЂР°Р¶РµРЅРёРµ
+                InvalidateRect(hwnd, NULL, TRUE); // РћР±РЅРѕРІР»СЏРµРј РѕРєРЅРѕ
             }
             break;
         case IDM_ADD_POLYLINE:
@@ -492,7 +595,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case IDM_SHOW_LINES:
             showLines = !showLines;
             CheckMenuItem(GetMenu(hwnd), IDM_SHOW_LINES, showLines ? MF_CHECKED : MF_UNCHECKED);
-            InvalidateRect(hwnd, NULL, TRUE); // Перерисовать окно
+            InvalidateRect(hwnd, NULL, TRUE); // РџРµСЂРµСЂРёСЃРѕРІР°С‚СЊ РѕРєРЅРѕ
             break;
         case IDM_SHOW_CIRCLES:
             showCircles = !showCircles;
@@ -529,16 +632,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CheckMenuItem(GetMenu(hwnd), IDM_SHOW_PARALLELOGRAMS, showParallelograms ? MF_CHECKED : MF_UNCHECKED);
             InvalidateRect(hwnd, NULL, TRUE);
             break;
+        case IDM_ROTATE_SELECTED:
+            if (selectedShape) {
+                selectedShape->rotate(10); // Р’СЂР°С‰Р°РµРј РЅР° 15 РіСЂР°РґСѓСЃРѕРІ
+                InvalidateRect(hwnd, NULL, TRUE); // РћР±РЅРѕРІР»СЏРµРј РѕРєРЅРѕ
+            }
+            break;
         }
 
         if (shapeRequiresPoints) {
-            numPoints = ShowPointDialog(hwnd); // Показываем диалог для ввода количества точек
+            numPoints = ShowPointDialog(hwnd); // РџРѕРєР°Р·С‹РІР°РµРј РґРёР°Р»РѕРі РґР»СЏ РІРІРѕРґР° РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕС‡РµРє
             if (numPoints > 0) {
-                points.clear(); // Очищаем статический массив точек
-                mode = newMode; // Устанавливаем режим для добавления точек
+                points.clear(); // РћС‡РёС‰Р°РµРј СЃС‚Р°С‚РёС‡РµСЃРєРёР№ РјР°СЃСЃРёРІ С‚РѕС‡РµРє
+                mode = newMode; // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЂРµР¶РёРј РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ С‚РѕС‡РµРє
             }
             else {
-                mode = MODE_SELECT; // Возвращаемся в режим выбора, если количество точек не введено
+                mode = MODE_SELECT; // Р’РѕР·РІСЂР°С‰Р°РµРјСЃСЏ РІ СЂРµР¶РёРј РІС‹Р±РѕСЂР°, РµСЃР»Рё РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє РЅРµ РІРІРµРґРµРЅРѕ
             }
         }
 
@@ -595,8 +704,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case MODE_ADD_ARC_SECOND_POINT:
         {
             endPoint = MyShapes::Point(xPos, yPos);
-            int radiusArc = sqrt(pow(startPoint.x - endPoint.x, 2) + pow(startPoint.y - endPoint.y, 2)); // Расчет радиуса
-            shapes.push_back(new MyShapes::Arc(startPoint, radiusArc, 45 * M_PI / 180, 135 * M_PI / 180)); // Пример углов в радианах
+            int radiusArc = sqrt(pow(startPoint.x - endPoint.x, 2) + pow(startPoint.y - endPoint.y, 2)); // Р Р°СЃС‡РµС‚ СЂР°РґРёСѓСЃР°
+            shapes.push_back(new MyShapes::Arc(startPoint, radiusArc, 45 * M_PI / 180, 135 * M_PI / 180)); // РџСЂРёРјРµСЂ СѓРіР»РѕРІ РІ СЂР°РґРёР°РЅР°С…
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
@@ -610,7 +719,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case MODE_ADD_RING_SECOND_POINT:
         {
             int outerRadius = sqrt(pow(xPos - startPoint.x, 2) + pow(yPos - startPoint.y, 2));
-            shapes.push_back(new MyShapes::Ring(startPoint, outerRadius, outerRadius / 2)); // Пример кольца
+            shapes.push_back(new MyShapes::Ring(startPoint, outerRadius, outerRadius / 2)); // РџСЂРёРјРµСЂ РєРѕР»СЊС†Р°
             mode = MODE_SELECT;
             InvalidateRect(hwnd, NULL, TRUE);
             break;
@@ -687,7 +796,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_PAINT:
         hdc = BeginPaint(hwnd, &ps);
         for (MyShapes::Shape* shape : shapes) {
-            // Проверяем тип фигуры перед рисованием
+            // РџСЂРѕРІРµСЂСЏРµРј С‚РёРї С„РёРіСѓСЂС‹ РїРµСЂРµРґ СЂРёСЃРѕРІР°РЅРёРµРј
             if ((dynamic_cast<MyShapes::Line*>(shape) && showLines) ||
                 (dynamic_cast<MyShapes::Circle*>(shape) && showCircles) ||
                 (dynamic_cast<MyShapes::Arc*>(shape) && showArcs) ||
@@ -715,7 +824,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-// Основная функция
+// РћСЃРЅРѕРІРЅР°СЏ С„СѓРЅРєС†РёСЏ
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASSEX wc = { 0 };
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -730,13 +839,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    HWND hwnd = CreateWindowEx(0, "MyWindowClass", "Примитивный графический редактор",
+    HWND hwnd = CreateWindowEx(0, "MyWindowClass", "РџСЂРёРјРёС‚РёРІРЅС‹Р№ РіСЂР°С„РёС‡РµСЃРєРёР№ СЂРµРґР°РєС‚РѕСЂ",
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, NULL, NULL, hInstance, NULL);
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
-    // Инициализация фигур
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„РёРіСѓСЂ
     std::vector<MyShapes::Shape*> shapes;
     shapes.push_back(new MyShapes::Circle(MyShapes::Point(200, 200), 100));
     shapes.push_back(new MyShapes::Line(MyShapes::Point(100, 100), MyShapes::Point(300, 300)));

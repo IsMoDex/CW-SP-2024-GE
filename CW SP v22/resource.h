@@ -22,6 +22,7 @@
 #define IDM_SHOW_POLYGONS               32787
 #define IDM_SHOW_TRIANGLES              32788
 #define IDM_SHOW_PARALLELOGRAMS         32789
+#define IDM_ROTATE_SELECTED             32790
 
 // Новые идентификаторы для фигур
 #define IDM_ADD_POLYLINE                32778
