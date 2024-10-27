@@ -12,7 +12,7 @@ namespace MyShapes {
         COLORREF color;
     public:
 
-        void setColor(COLORREF newColor) {
+        virtual void setColor(COLORREF newColor) {
             color = newColor;
         }
 
@@ -279,6 +279,11 @@ namespace MyShapes {
 
         Ring(Point center, int outerRadius, int innerRadius)
             : outerCircle(center, outerRadius), innerCircle(center, innerRadius) {}
+
+        void setColor(COLORREF newColor) {
+            outerCircle.setColor(newColor);
+            innerCircle.setColor(newColor);
+        }
 
         void draw(HDC hdc) override {
             outerCircle.draw(hdc);
@@ -661,10 +666,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         switch (mode) {
         case MODE_SELECT:
+
+            if (selectedShape != nullptr)
+                selectedShape->setColor(RGB(0, 0, 0));
+
             selectedShape = nullptr;
+
             for (MyShapes::Shape* shape : shapes) {
                 if (shape->isClicked(xPos, yPos)) {
                     selectedShape = shape;
+                    selectedShape->setColor(RGB(0, 0, 255));
+                    InvalidateRect(hwnd, NULL, TRUE);
                     break;
                 }
             }
