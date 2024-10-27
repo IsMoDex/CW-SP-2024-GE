@@ -800,6 +800,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             case VK_DOWN:
                 selectedShape->move(0, moveDistance);
                 break;
+            case VK_DELETE:
+            {
+                auto it = std::find(shapes.begin(), shapes.end(), selectedShape);
+                if (it != shapes.end()) {
+                    delete* it;               // Удаляем объект из памяти
+                    shapes.erase(it);          // Удаляем указатель из вектора
+                }
+                selectedShape = nullptr;       // Сбрасываем указатель
+                break;
+            }
+
             }
             InvalidateRect(hwnd, NULL, TRUE);
         }
