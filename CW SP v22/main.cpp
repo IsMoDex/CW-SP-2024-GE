@@ -509,11 +509,19 @@ int ShowPointDialog(HWND hwnd) {
     INT_PTR ret = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG_POINTS), hwnd, [](HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) -> INT_PTR {
         switch (message) {
         case WM_INITDIALOG:
+        {
+            // Заполнение ComboBox для количества точек
+            HWND hComboPoints = GetDlgItem(hDlg, IDC_COMBO_POINTS);
+            SendMessage(hComboPoints, CB_ADDSTRING, 0, (LPARAM)"5");
+            SendMessage(hComboPoints, CB_ADDSTRING, 0, (LPARAM)"10");
+            SendMessage(hComboPoints, CB_ADDSTRING, 0, (LPARAM)"15");
+            SendMessage(hComboPoints, CB_ADDSTRING, 0, (LPARAM)"20");
             return (INT_PTR)TRUE;
+        }
         case WM_COMMAND:
             if (LOWORD(wParam) == IDOK) {
                 char buffer[256];
-                GetDlgItemText(hDlg, IDC_EDIT_POINTS, buffer, 256);
+                GetDlgItemText(hDlg, IDC_COMBO_POINTS, buffer, 256);
                 int numPoints = atoi(buffer);
                 EndDialog(hDlg, numPoints);
                 return (INT_PTR)TRUE;
@@ -534,11 +542,20 @@ int ShowAngleDialog(HWND hwnd) {
     INT_PTR ret = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG_ANGLE), hwnd, [](HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) -> INT_PTR {
         switch (message) {
         case WM_INITDIALOG:
+        {
+            // Заполнение ListBox для углов
+            HWND hListAngle = GetDlgItem(hDlg, IDC_LIST_ANGLE);
+            SendMessage(hListAngle, LB_ADDSTRING, 0, (LPARAM)"0");
+            SendMessage(hListAngle, LB_ADDSTRING, 0, (LPARAM)"30");
+            SendMessage(hListAngle, LB_ADDSTRING, 0, (LPARAM)"45");
+            SendMessage(hListAngle, LB_ADDSTRING, 0, (LPARAM)"60");
+            SendMessage(hListAngle, LB_ADDSTRING, 0, (LPARAM)"90");
             return (INT_PTR)TRUE;
+        }
         case WM_COMMAND:
             if (LOWORD(wParam) == IDOK) {
                 char buffer[256];
-                GetDlgItemText(hDlg, IDC_EDIT_ANGLE, buffer, 256);
+                GetDlgItemText(hDlg, IDC_LIST_ANGLE, buffer, 256);
                 int numPoints = atoi(buffer);
                 EndDialog(hDlg, numPoints);
                 return (INT_PTR)TRUE;
