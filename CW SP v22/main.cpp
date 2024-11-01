@@ -1,6 +1,10 @@
-﻿#include <windows.h>
+﻿#define _CRT_SECURE_NO_WARNINGS
+
+#include <windows.h>
 #include <vector>
 #include <cmath>
+#include <commctrl.h>
+
 #include "resource.h"
 
 #define M_PI 3.1415926535
@@ -551,8 +555,17 @@ int ShowAngleDialog(HWND hwnd) {
     return ret; // Возвращаем количество точек
 }
 
+// Обновление текстов статус-бара
+void UpdateStatusBar(HWND hWndStatus, int countShapes) {
+    char statusText[256];
+    wsprintf(statusText, "Количество фигур: %d", countShapes);
+    SendMessage(hWndStatus, SB_SETTEXT, 1, (LPARAM)statusText);
+}
+
 // Основная логика для окна
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    // Глобальные переменные
+    static HWND hWndStatus;
     static HMENU hContextMenu;
 
     static std::vector<MyShapes::Shape*> shapes;
@@ -577,7 +590,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MODE_ADD_PARALLELOGRAM_FIRST_POINT
     };
 
-
     static Mode mode = MODE_SELECT;
 
     static MyShapes::Point startPoint, endPoint;
@@ -597,6 +609,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CREATE:
     {
+        // Создание статус-бара
+        hWndStatus = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Панков Егор Артемович ПИ-21Б", hwnd, 0);
+
+        // Установка панели статус-бара
+        int parts[2] = { 200, -1 }; // Ширина первой части 100 пикселей, вторая часть занимает оставшееся пространство
+        SendMessage(hWndStatus, SB_SETPARTS, 2, (LPARAM)parts);
+
         // Загружаем меню из ресурса
         HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU1));
         SetMenu(hwnd, hMenu);
@@ -718,6 +737,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 mode = MODE_SELECT; // Возвращаемся в режим выбора, если количество точек не введено
             }
         }
+
+        UpdateStatusBar(hWndStatus, shapes.size() + 1);
 
         break;
     }
@@ -910,6 +931,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         EndPaint(hwnd, &ps);
         break;
 
+    case WM_SIZE:
+        // Установка размеров статус-бара при изменении размеров окна
+        SendMessage(hWndStatus, WM_SIZE, 0, 0);
+        break;
+
     case WM_DESTROY:
         for (MyShapes::Shape* shape : shapes) {
             delete shape;
@@ -925,6 +951,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 // Основная функция
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // Инициализация общих контролов
+    INITCOMMONCONTROLSEX icex;
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC = ICC_WIN95_CLASSES; // Укажите нужный набор классов
+    InitCommonControlsEx(&icex);
+
     WNDCLASSEX wc = { 0 };
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.lpfnWndProc = WndProc;
