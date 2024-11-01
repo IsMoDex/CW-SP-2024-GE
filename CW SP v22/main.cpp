@@ -553,6 +553,8 @@ int ShowAngleDialog(HWND hwnd) {
 
 // Основная логика для окна
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HMENU hContextMenu;
+
     static std::vector<MyShapes::Shape*> shapes;
     static MyShapes::Shape* selectedShape = nullptr;
 
@@ -598,6 +600,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         // Загружаем меню из ресурса
         HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MENU1));
         SetMenu(hwnd, hMenu);
+
+        // Загружаем контекстное меню
+        hContextMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_CONTEXT_MENU));
+        if (hContextMenu)
+            hContextMenu = GetSubMenu(hContextMenu, 0);
     }
     break;
 
@@ -837,6 +844,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         }
 
+        break;
+    }
+
+    case WM_RBUTTONDOWN: {
+        // Получаем координаты клика мыши
+        POINT pt;
+        pt.x = LOWORD(lParam);
+        pt.y = HIWORD(lParam);
+        ClientToScreen(hwnd, &pt);
+
+        // Отображаем контекстное меню
+        TrackPopupMenu(hContextMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
         break;
     }
 
