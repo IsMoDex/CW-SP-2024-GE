@@ -467,17 +467,31 @@ namespace MyShapes {
 
     class Parallelogram : public Polygon {
     public:
-        Parallelogram(Point p1, Point p2, Point p3, Point p4)
-            : Polygon({ p1, p2, p3, p4 }) {}
+        Parallelogram(Point p1, Point p2, double angle) : Polygon({ p1, p2 }) {
+            // Вычисляем третью и четвертую точку на основе угла
+            double dx = p2.x - p1.x;
+            double dy = p2.y - p1.y;
+
+            // Длина стороны
+            double length = sqrt(dx * dx + dy * dy);
+
+            // Угол наклона (в радианах)
+            double rad = angle * M_PI / 180.0;
+
+            // Вычисляем третью точку, используя угол наклона
+            Point p3(p1.x + length * cos(rad), p1.y + length * sin(rad));
+            Point p4(p2.x + length * cos(rad), p2.y + length * sin(rad));
+
+            points.push_back(p4);
+            points.push_back(p3);
+        }
 
         void rotate(double angle) override {
-            // Находим центр параллелограмма как среднее всех точек
             Point center(
                 (points[0].x + points[1].x + points[2].x + points[3].x) / 4,
                 (points[0].y + points[1].y + points[2].y + points[3].y) / 4
             );
 
-            // Поворачиваем каждую точку вокруг центра
             for (Point& point : points) {
                 point.rotateAround(center, angle);
             }
@@ -496,6 +510,31 @@ int ShowPointDialog(HWND hwnd) {
             if (LOWORD(wParam) == IDOK) {
                 char buffer[256];
                 GetDlgItemText(hDlg, IDC_EDIT_POINTS, buffer, 256);
+                int numPoints = atoi(buffer);
+                EndDialog(hDlg, numPoints);
+                return (INT_PTR)TRUE;
+            }
+            else if (LOWORD(wParam) == IDCANCEL) {
+                EndDialog(hDlg, 0);
+                return (INT_PTR)TRUE;
+            }
+            break;
+        }
+        return (INT_PTR)FALSE;
+        });
+
+    return ret; // Возвращаем количество точек
+}
+
+int ShowAngleDialog(HWND hwnd) {
+    INT_PTR ret = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG_ANGLE), hwnd, [](HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) -> INT_PTR {
+        switch (message) {
+        case WM_INITDIALOG:
+            return (INT_PTR)TRUE;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDOK) {
+                char buffer[256];
+                GetDlgItemText(hDlg, IDC_EDIT_ANGLE, buffer, 256);
                 int numPoints = atoi(buffer);
                 EndDialog(hDlg, numPoints);
                 return (INT_PTR)TRUE;
@@ -787,8 +826,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // Parallelogram
         case MODE_ADD_PARALLELOGRAM_FIRST_POINT:
             points.push_back(MyShapes::Point(xPos, yPos));
-            if (points.size() == 4) {
-                shapes.push_back(new MyShapes::Parallelogram(points[0], points[1], points[2], points[3]));
+            if (points.size() == 2) {
+                double angle = ShowAngleDialog(hwnd);
+                shapes.push_back(new MyShapes::Parallelogram(points[0], points[1], angle));
                 points.clear();
                 mode = MODE_SELECT;
                 InvalidateRect(hwnd, NULL, TRUE);

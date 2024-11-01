@@ -33,3 +33,7 @@
 // Новые идентификаторы для диалога и его элементов
 #define IDD_DIALOG_POINTS               200
 #define IDC_EDIT_POINTS                 201
+
+#define IDD_DIALOG_ANGLE       103
+#define IDC_EDIT_ANGLE         1001
+#define IDM_ADD_PARALLELOGRAM  40002
