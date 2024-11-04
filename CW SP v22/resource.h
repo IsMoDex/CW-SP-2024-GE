@@ -39,3 +39,5 @@
 #define IDM_ADD_PARALLELOGRAM  40002
 
 #define IDR_CONTEXT_MENU                129
+
+#define IDM_TRIM_SELECTED             32791

@@ -10,6 +10,9 @@
 #define M_PI 3.1415926535
 
 namespace MyShapes {
+
+    class Point;
+
     // Определим интерфейс для всех фигур
     class Shape {
     protected:
@@ -25,6 +28,7 @@ namespace MyShapes {
         virtual Shape* copy() const = 0;
         virtual void rotate(double angle) = 0;
         virtual void mirror(bool vertical) = 0;
+        virtual void trim(const MyShapes::Point& start, const MyShapes::Point& end) = 0;
 
         // Добавляем виртуальный метод isClicked
         virtual bool isClicked(int x, int y) = 0;
@@ -84,7 +88,50 @@ namespace MyShapes {
             x = center.x + (dx * cosAngle - dy * sinAngle);
             y = center.y + (dx * sinAngle + dy * cosAngle);
         }
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            // Точку нельзя обрезать
+        }
     };
+
+    bool isPointInsideTrimArea(const Point& point, const Point& trimStart, const Point& trimEnd) {
+        int left = min(trimStart.x, trimEnd.x);
+        int right = max(trimStart.x, trimEnd.x);
+        int top = min(trimStart.y, trimEnd.y);
+        int bottom = max(trimStart.y, trimEnd.y);
+
+        return (point.x >= left && point.x <= right && point.y >= top && point.y <= bottom);
+    }
+
+    bool lineSegmentIntersection(const Point& p1, const Point& p2, const Point& q1, const Point& q2, Point& intersection) {
+        int A1 = p2.y - p1.y;
+        int B1 = p1.x - p2.x;
+        int C1 = A1 * p1.x + B1 * p1.y;
+
+        int A2 = q2.y - q1.y;
+        int B2 = q1.x - q2.x;
+        int C2 = A2 * q1.x + B2 * q1.y;
+
+        int det = A1 * B2 - A2 * B1;
+
+        if (det == 0) {
+            return false; // Линии параллельны
+        }
+        else {
+            intersection.x = (B2 * C1 - B1 * C2) / det;
+            intersection.y = (A1 * C2 - A2 * C1) / det;
+
+            // Проверка, находится ли точка пересечения на обоих сегментах
+            if (intersection.x >= min(p1.x, p2.x) && intersection.x <= max(p1.x, p2.x) &&
+                intersection.y >= min(p1.y, p2.y) && intersection.y <= max(p1.y, p2.y) &&
+                intersection.x >= min(q1.x, q2.x) && intersection.x <= max(q1.x, q2.x) &&
+                intersection.y >= min(q1.y, q2.y) && intersection.y <= max(q1.y, q2.y)) {
+                return true;
+            }
+            return false;
+        }
+    }
+
 
     // Линия (отрезок)
     class Line : public Shape {
@@ -134,6 +181,11 @@ namespace MyShapes {
         void mirror(bool vertical) override {
 
         }
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            start = trimStart;
+            end = trimEnd;
+        }
     };
 
     // Круг
@@ -179,6 +231,14 @@ namespace MyShapes {
 
         void mirror(bool vertical) override {
 
+        }
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            // Если линия обрезки проходит через центр круга, мы можем уменьшить радиус
+            double distance = sqrt(pow(trimStart.x - center.x, 2) + pow(trimStart.y - center.y, 2));
+            if (distance < radius) {
+                radius = distance; // Уменьшаем радиус до расстояния до trimStart
+            }
         }
     };
 
@@ -273,15 +333,27 @@ namespace MyShapes {
             return false; // Точка вне радиуса
         }
 
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            // Логика обрезания дуги, например, если обрезка проходит через центр
+            // Уменьшаем радиус или изменяем углы
+            double distance = sqrt(pow(trimStart.x - center.x, 2) + pow(trimStart.y - center.y, 2));
+            if (distance < radius) {
+                radius = distance; // Уменьшаем радиус до trimStart
+            }
+        }
     };
 
     class Ring : public Shape {
-    public:
-        Circle outerCircle;
-        Circle innerCircle;
+    private:
+        Point center; // Добавляем поле для центра
+        Circle outerCircle; // Внешний круг
+        Circle innerCircle; // Внутренний круг
 
+    public:
         Ring(Point center, int outerRadius, int innerRadius)
-            : outerCircle(center, outerRadius), innerCircle(center, innerRadius) {}
+            : center(center), // Инициализируем центр
+            outerCircle(center, outerRadius),
+            innerCircle(center, innerRadius) {}
 
         void setColor(COLORREF newColor) {
             outerCircle.setColor(newColor);
@@ -299,7 +371,7 @@ namespace MyShapes {
         }
 
         Shape* copy() const override {
-            return new Ring(outerCircle.getCenter(), outerCircle.getRadius(), innerCircle.getRadius());
+            return new Ring(center, outerCircle.getRadius(), innerCircle.getRadius());
         }
 
         void rotate(double angle) override {
@@ -320,6 +392,20 @@ namespace MyShapes {
             bool insideInner = (dx * dx + dy * dy <= innerCircle.getRadius() * innerCircle.getRadius());
 
             return insideOuter && !insideInner; // Внутри внешнего и снаружи внутреннего
+        }
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            // Если обрезка проходит через внешний или внутренний радиус, корректируем их
+            double distanceStart = sqrt(pow(trimStart.x - center.x, 2) + pow(trimStart.y - center.y, 2));
+            double distanceEnd = sqrt(pow(trimEnd.x - center.x, 2) + pow(trimEnd.y - center.y, 2));
+
+            // Обновляем радиусы, если нужно
+            if (distanceStart < outerCircle.getRadius()) {
+                outerCircle = Circle(center, distanceStart); // Уменьшаем внешний радиус
+            }
+            if (distanceEnd < innerCircle.getRadius()) {
+                innerCircle = Circle(center, distanceEnd); // Уменьшаем внутренний радиус
+            }
         }
     };
 
@@ -416,6 +502,35 @@ namespace MyShapes {
             }
             return false; // Не попал в полилинию
         }
+
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            std::vector<Point> trimmedPoints;
+            bool trimming = false;
+
+            for (size_t i = 0; i < points.size() - 1; ++i) {
+                Point p1 = points[i];
+                Point p2 = points[i + 1];
+
+                // Проверка на пересечение текущего отрезка с линией обрезки
+                Point intersection;
+                if (lineSegmentIntersection(p1, p2, trimStart, trimEnd, intersection)) {
+                    trimmedPoints.push_back(p1);
+                    trimmedPoints.push_back(intersection);
+                    trimming = true;
+                    break;
+                }
+                else {
+                    trimmedPoints.push_back(p1);
+                }
+            }
+
+            // Если обрезка произошла, обновляем точки полилинии
+            if (trimming) {
+                points = trimmedPoints;
+            }
+        }
+
     };
 
     class Polygon : public Polyline {
@@ -449,6 +564,10 @@ namespace MyShapes {
             }
             return inside; // Внутри многоугольника
         }
+
+
+
+
     };
 
     class Triangle : public Polygon {
@@ -466,6 +585,11 @@ namespace MyShapes {
             for (Point& point : points) {
                 point.rotateAround(center, angle);
             }
+        }
+
+        void trim(const Point& trimStart, const Point& trimEnd) override {
+            // Логика обрезки для треугольника
+            // Проверяем пересечения с рёбрами
         }
     };
 
@@ -593,6 +717,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     enum Mode {
         MODE_SELECT,
+        MODE_TRIM_SELECTED_FIRST_POINT,
+        MODE_TRIM_SELECTED_SECOND_POINT,
         MODE_ADD_LINE_FIRST_POINT,
         MODE_ADD_LINE_SECOND_POINT,
         MODE_ADD_CIRCLE_FIRST_POINT,
@@ -665,6 +791,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
         case IDM_SELECT_MODE:
             mode = MODE_SELECT;
+            break;
+        case IDM_TRIM_SELECTED:
+            if (selectedShape) {
+                mode = MODE_TRIM_SELECTED_FIRST_POINT;
+            }
             break;
         case IDM_MIRROR_VERTICAL:  // Обработка зеркального отображения
             if (selectedShape) {
@@ -781,6 +912,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     break;
                 }
             }
+            break;
+
+        case MODE_TRIM_SELECTED_FIRST_POINT:
+            startPoint = MyShapes::Point(xPos, yPos);
+            mode = MODE_TRIM_SELECTED_SECOND_POINT;
+            break;
+
+        case MODE_TRIM_SELECTED_SECOND_POINT:
+            endPoint = MyShapes::Point(xPos, yPos);
+            if (selectedShape) {
+                selectedShape->trim(startPoint, endPoint);
+                InvalidateRect(hwnd, NULL, TRUE); // Обновляем окно
+            }
+            mode = MODE_SELECT;
             break;
 
         case MODE_ADD_LINE_FIRST_POINT:
